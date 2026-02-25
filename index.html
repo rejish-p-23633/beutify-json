@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Beautifier</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5; color: #333;
+            height: 100vh; display: flex; flex-direction: column; overflow: hidden;
+        }
+        .header { padding: 10px 20px; text-align: center; flex-shrink: 0; }
+        .header h1 { color: #1a73e8; font-size: 1.6rem; margin-bottom: 2px; }
+        .header .sub { color: #666; font-size: 0.8rem; }
+        .opts {
+            display: flex; gap: 14px; justify-content: center;
+            align-items: center; padding: 4px 20px; flex-wrap: wrap; flex-shrink: 0;
+        }
+        .opts label { color: #555; font-size: 0.8rem; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+        .opts select {
+            padding: 3px 8px; border-radius: 5px; border: 1px solid #ccc;
+            background: #fff; color: #333; font-size: 0.8rem; cursor: pointer;
+        }
+        .btns {
+            display: flex; gap: 8px; justify-content: center;
+            padding: 6px 20px; flex-wrap: wrap; flex-shrink: 0;
+        }
+        .btns button {
+            padding: 7px 18px; border: none; border-radius: 7px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .btns button:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.18); }
+        .btns button:active { transform: translateY(0); }
+        .b-beautify { background: linear-gradient(135deg,#1a73e8,#0d47a1); color:#fff; }
+        .b-minify   { background: linear-gradient(135deg,#f9a825,#f57f17); color:#fff; }
+        .b-reformat { background: linear-gradient(135deg,#00897b,#004d40); color:#fff; }
+        .b-copy     { background: linear-gradient(135deg,#43a047,#2e7d32); color:#fff; }
+        .b-clear    { background: linear-gradient(135deg,#e53935,#b71c1c); color:#fff; }
+        .b-sample   { background: linear-gradient(135deg,#7b1fa2,#4a148c); color:#fff; }
+        .b-sample2  { background: linear-gradient(135deg,#ef6c00,#e65100); color:#fff; }
+        .main { flex: 1; display: flex; overflow: hidden; padding: 0 16px 6px; }
+        .panel { display: flex; flex-direction: column; overflow: hidden; min-width: 200px; }
+        .panel-left  { flex: 1; }
+        .panel-right { flex: 1; }
+        .panel-head {
+            padding: 5px 0; font-weight: 700; color: #444;
+            text-transform: uppercase; font-size: 0.72rem; letter-spacing: 1px;
+            flex-shrink: 0; display: flex; align-items: center; gap: 6px;
+        }
+        .resizer {
+            width: 10px; cursor: col-resize; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; user-select: none;
+        }
+        .resizer::after { content: '⋮'; font-size: 18px; color: #bbb; transition: color 0.2s; }
+        .resizer:hover::after { color: #1a73e8; }
+        #input {
+            flex: 1; width: 100%; padding: 12px;
+            border: 2px solid #d0d5dd; border-radius: 8px;
+            background: #fff; color: #1e1e1e;
+            font-family: 'Fira Code','Cascadia Code','Consolas','Courier New',monospace;
+            font-size: 13px; line-height: 1.65; resize: none; outline: none;
+            tab-size: 2; overflow: auto;
+        }
+        #input:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.12); }
+        .editor-box {
+            flex: 1; display: flex; overflow: hidden;
+            border: 2px solid #d0d5dd; border-radius: 8px;
+            background: #1e1e1e; transition: border-color 0.2s;
+        }
+        .gutter {
+            flex-shrink: 0; overflow: hidden; padding: 12px 0;
+            background: #1e1e1e; border-right: 1px solid #333; user-select: none;
+        }
+        .gutter .ln {
+            display: block; text-align: right; padding: 0 10px 0 8px;
+            color: #4a4a4a; font-family: 'Fira Code','Consolas',monospace;
+            font-size: 13px; line-height: 1.65;
+        }
+        .code-scroll { flex: 1; overflow: auto; }
+        .code-pre {
+            margin: 0; padding: 12px 14px;
+            font-family: 'Fira Code','Cascadia Code','Consolas','Courier New',monospace;
+            font-size: 13px; line-height: 1.65; white-space: pre-wrap;
+            word-wrap: break-word; color: #d4d4d4;
+            outline: none; min-height: 100%; tab-size: 2; caret-color: #d4d4d4;
+        }
+        .code-pre:empty::before {
+            content: 'Formatted output here — editable with bracket matching.\AClick any { } [ ] to highlight its matching pair.';
+            white-space: pre-wrap; color: #555; font-style: italic;
+        }
+        .code-pre::selection { background: rgba(51,153,255,0.35); }
+        .code-pre *::selection { background: rgba(51,153,255,0.35); }
+        .sk  { color: #9cdcfe; }
+        .ss  { color: #ce9178; }
+        .sn  { color: #b5cea8; }
+        .sb  { color: #569cd6; font-weight: 600; }
+        .snl { color: #569cd6; font-style: italic; }
+        .sbc { color: #da70d6; font-weight: 600; cursor: pointer; }
+        .sbr { color: #ffd700; font-weight: 600; cursor: pointer; }
+        .sco { color: #d4d4d4; }
+        .scm { color: #d4d4d4; }
+        .bm  {
+            background: rgba(255,255,0,0.35)!important; outline: 2px solid #ffd700!important;
+            border-radius: 3px; color: #fff!important; font-weight: 700!important;
+        }
+        .bmp {
+            background: rgba(255,215,0,0.22)!important; border-bottom: 3px solid #ffd700!important;
+            color: #fff!important; font-weight: 700!important;
+        }
+        /* Repaired marker */
+        .repaired { opacity: 0.45; font-style: italic; }
+        .repair-badge {
+            display: inline-block; padding: 1px 8px; border-radius: 4px;
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px;
+            background: #fff3e0; color: #e65100; margin-left: 6px;
+        }
+        /* Light theme */
+        body.light .editor-box { background: #fafafa; }
+        body.light .gutter { background: #fafafa; border-right-color: #ddd; }
+        body.light .gutter .ln { color: #aaa; }
+        body.light .code-pre { color: #1e1e1e; caret-color: #333; }
+        body.light .code-pre:empty::before { color: #aaa; }
+        body.light .sk  { color: #0451a5; }
+        body.light .ss  { color: #a31515; }
+        body.light .sn  { color: #098658; }
+        body.light .sb  { color: #0000ff; }
+        body.light .snl { color: #0000ff; }
+        body.light .sbc { color: #af00db; }
+        body.light .sbr { color: #af8700; }
+        body.light .sco { color: #333; }
+        body.light .scm { color: #333; }
+        body.light .bm  { background: rgba(255,200,0,0.45)!important; outline-color:#d4a800!important; color:#000!important; }
+        body.light .bmp { background: rgba(255,200,0,0.25)!important; border-bottom-color:#d4a800!important; color:#000!important; }
+        .status-bar {
+            flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+            gap: 14px; padding: 6px 20px; flex-wrap: wrap;
+        }
+        .status-msg { padding: 5px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 500; max-width: 80%; }
+        .status-msg.ok   { background:#e8f5e9; color:#2e7d32; }
+        .status-msg.err  { background:#ffebee; color:#c62828; }
+        .status-msg.info { background:#e3f2fd; color:#1565c0; }
+        .status-msg.warn { background:#fff8e1; color:#f57f17; }
+        .cursor-info {
+            font-size: 0.76rem; color: #777; background: #eee;
+            padding: 2px 10px; border-radius: 4px; font-family: 'Consolas',monospace;
+        }
+        .format-badge {
+            display: inline-block; padding: 1px 8px; border-radius: 4px;
+            font-size: 0.66rem; font-weight: 700; letter-spacing: 0.5px;
+        }
+        .format-badge.json { background: #e8f5e9; color: #2e7d32; }
+        .format-badge.map  { background: #fff3e0; color: #e65100; }
+        @media (max-width: 768px) {
+            .main { flex-direction: column; }
+            .resizer { width: 100%; height: 10px; cursor: row-resize; }
+            .resizer::after { content: '⋯'; }
+            .panel { min-width: unset; min-height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 JSON Beautifier</h1>
+        <div class="sub">JSON · Map/toString() · escaped strings → editable, color-coded output · 🔒 large number safe · 🩹 auto-repairs truncated JSON</div>
+    </div>
+    <div class="opts">
+        <label>Indent: <select id="indentSize"><option value="2" selected>2</option><option value="4">4</option><option value="tab">Tab</option></select></label>
+        <label>Theme: <select id="themeSelect" onchange="toggleTheme()"><option value="dark" selected>🌙 Dark</option><option value="light">☀️ Light</option></select></label>
+        <label><input type="checkbox" id="sortKeys"> Sort keys</label>
+        <label><input type="checkbox" id="autoDetect" checked> Unescape nested JSON</label>
+        <label><input type="checkbox" id="autoRepair" checked> 🩹 Auto-repair truncated</label>
+        <label><input type="checkbox" id="lineNums" checked onchange="renderGutter()"> Line numbers</label>
+    </div>
+    <div class="btns">
+        <button class="b-beautify" onclick="beautify()">✨ Beautify</button>
+        <button class="b-minify" onclick="doMinify()">📦 Minify</button>
+        <button class="b-reformat" onclick="reformatOutput()">🔄 Re-format</button>
+        <button class="b-copy" onclick="copyOutput()">📋 Copy</button>
+        <button class="b-clear" onclick="clearAll()">🗑️ Clear</button>
+        <button class="b-sample" onclick="loadJSON()">📄 JSON</button>
+        <button class="b-sample2" onclick="loadMap()">📄 Map</button>
+    </div>
+    <div class="main">
+        <div class="panel panel-left" id="panelLeft">
+            <div class="panel-head">📥 Input <span id="fmtBadge"></span></div>
+            <textarea id="input" placeholder="Paste JSON, Map, or messy data here...&#10;&#10;💡 Auto-beautifies on paste&#10;⌨️ Ctrl+Enter to beautify&#10;🩹 Truncated JSON is auto-repaired"></textarea>
+        </div>
+        <div class="resizer" id="resizer"></div>
+        <div class="panel panel-right" id="panelRight">
+            <div class="panel-head">📤 Output — Click { } [ ] for bracket matching <span id="repairBadge"></span></div>
+            <div class="editor-box" id="editorBox">
+                <div class="gutter" id="gutter"></div>
+                <div class="code-scroll" id="codeScroll">
+                    <pre class="code-pre" id="codePre" contenteditable="true" spellcheck="false"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="status-bar">
+        <span class="status-msg info" id="statusMsg">Ready — paste data and click Beautify.</span>
+        <span class="cursor-info" id="cursorInfo">Ln 1, Col 1</span>
+    </div>
+
+    <script>
+    const $ = id => document.getElementById(id);
+    const codePre = $('codePre'), codeScroll = $('codeScroll'), gutterEl = $('gutter');
+    let rawOutput = '', activeBracketA = null, activeBracketB = null;
+
+    // ============================================================
+    //  JSON AUTO-REPAIR ENGINE
+    //  Detects and closes unclosed strings, arrays, objects
+    // ============================================================
+
+    /**
+     * Repair truncated JSON by closing any unclosed structures.
+     * Returns { text: repairedString, repaired: boolean, repairs: string[] }
+     */
+    function repairJSON(input) {
+        const repairs = [];
+        let text = input.trim();
+        if (!text) return { text, repaired: false, repairs };
+
+        // State machine walk through the string
+        let i = 0, len = text.length;
+        let inString = false, escaped = false;
+        const stack = []; // tracks nesting: 'object', 'array', 'string', 'key', 'value', 'colon'
+
+        // Context stack for braces/brackets
+        const braceStack = [];
+
+        // Walk character by character to understand the structure
+        let pos = 0;
+        let inStr = false;
+        let esc = false;
+        let strChar = '"';
+
+        for (pos = 0; pos < len; pos++) {
+            const c = text[pos];
+            if (inStr) {
+                if (esc) { esc = false; continue; }
+                if (c === '\\') { esc = true; continue; }
+                if (c === strChar) { inStr = false; continue; }
+                continue;
+            }
+            if (c === '"') { inStr = true; strChar = '"'; continue; }
+            if (c === '{') { braceStack.push('{'); continue; }
+            if (c === '[') { braceStack.push('['); continue; }
+            if (c === '}') {
+                if (braceStack.length && braceStack[braceStack.length-1] === '{') braceStack.pop();
+                continue;
+            }
+            if (c === ']') {
+                if (braceStack.length && braceStack[braceStack.length-1] === '[') braceStack.pop();
+                continue;
+            }
+        }
+
+        let suffix = '';
+
+        // If we ended inside a string, close it
+        if (inStr) {
+            suffix += '"';
+            repairs.push('Closed unclosed string');
+        }
+
+        // Close any remaining open braces/brackets (in reverse order)
+        for (let j = braceStack.length - 1; j >= 0; j--) {
+            if (braceStack[j] === '{') {
+                suffix += '}';
+                repairs.push('Closed unclosed {');
+            } else if (braceStack[j] === '[') {
+                suffix += ']';
+                repairs.push('Closed unclosed [');
+            }
+        }
+
+        if (suffix) {
+            text = text + suffix;
+        }
+
+        // Now try to parse — if it still fails, try more aggressive repairs
+        try {
+            JSON.parse(protectBN(text));
+            return { text, repaired: suffix.length > 0, repairs };
+        } catch(e) {
+            // More aggressive repair: try fixing common truncation patterns
+            return aggressiveRepair(input, text, suffix, repairs, e);
+        }
+    }
+
+    /**
+     * More aggressive repair for cases where simple bracket closing isn't enough.
+     * Handles: truncated numbers, missing commas, incomplete key-value pairs, etc.
+     */
+    function aggressiveRepair(original, current, existingSuffix, repairs, parseError) {
+        let text = current;
+        const msg = parseError.message || '';
+
+        // Strategy: try trimming back from the end to the last valid delimiter, then close
+        // Work with the original (before first suffix attempt)
+        let base = original.trim();
+
+        // Try progressively trimming trailing incomplete tokens
+        for (let trim = 0; trim < 200 && trim < base.length; trim++) {
+            let candidate = base.substring(0, base.length - trim);
+            const lastChar = candidate[candidate.length - 1];
+
+            // Only try at reasonable breakpoints
+            if (trim > 0 && !',:{}[]"0123456789tfn-'.includes(lastChar) && lastChar !== 'e' && lastChar !== 'l') {
+                continue;
+            }
+
+            // Recount what needs closing
+            let inStr = false, esc = false;
+            const stk = [];
+
+            for (let j = 0; j < candidate.length; j++) {
+                const c = candidate[j];
+                if (inStr) {
+                    if (esc) { esc = false; continue; }
+                    if (c === '\\') { esc = true; continue; }
+                    if (c === '"') { inStr = false; }
+                    continue;
+                }
+                if (c === '"') { inStr = true; continue; }
+                if (c === '{') stk.push('{');
+                if (c === '[') stk.push('[');
+                if (c === '}' && stk.length && stk[stk.length-1] === '{') stk.pop();
+                if (c === ']' && stk.length && stk[stk.length-1] === '[') stk.pop();
+            }
+
+            let suf = '';
+            if (inStr) suf += '"';
+            for (let j = stk.length - 1; j >= 0; j--) {
+                suf += stk[j] === '{' ? '}' : ']';
+            }
+
+            const attempt = candidate + suf;
+            try {
+                JSON.parse(protectBN(attempt));
+                const repairList = [];
+                if (trim > 0) repairList.push(`Trimmed ${trim} truncated char(s)`);
+                if (inStr) repairList.push('Closed unclosed string');
+                for (let j = stk.length - 1; j >= 0; j--) {
+                    repairList.push(`Closed unclosed ${stk[j]}`);
+                }
+                return { text: attempt, repaired: true, repairs: repairList };
+            } catch(e) {
+                // Try adding closing after last complete value
+                // If lastChar is a digit or letter, the value might be complete, just needs closing
+                if (',]}'.includes(lastChar) || (lastChar >= '0' && lastChar <= '9') || lastChar === '"' || lastChar === 'e' || lastChar === 'l') {
+                    // Try with a comma cleanup: if last meaningful char is a comma, remove it
+                    let cleaned = candidate.replace(/,\s*$/, '');
+                    let inStr2 = false, esc2 = false;
+                    const stk2 = [];
+                    for (let j = 0; j < cleaned.length; j++) {
+                        const c = cleaned[j];
+                        if (inStr2) { if (esc2) { esc2=false; continue; } if (c==='\\') { esc2=true; continue; } if (c==='"') inStr2=false; continue; }
+                        if (c==='"') { inStr2=true; continue; }
+                        if (c==='{') stk2.push('{');
+                        if (c==='[') stk2.push('[');
+                        if (c==='}' && stk2.length && stk2[stk2.length-1]==='{') stk2.pop();
+                        if (c===']' && stk2.length && stk2[stk2.length-1]==='[') stk2.pop();
+                    }
+                    let suf2 = '';
+                    if (inStr2) suf2 += '"';
+                    for (let j = stk2.length-1; j >= 0; j--) suf2 += stk2[j]==='{' ? '}' : ']';
+
+                    const attempt2 = cleaned + suf2;
+                    try {
+                        JSON.parse(protectBN(attempt2));
+                        const repairList2 = [];
+                        if (trim > 0) repairList2.push(`Trimmed ${trim} truncated char(s)`);
+                        repairList2.push('Removed trailing comma');
+                        if (inStr2) repairList2.push('Closed unclosed string');
+                        for (let j = stk2.length-1; j >= 0; j--) repairList2.push(`Closed unclosed ${stk2[j]}`);
+                        return { text: attempt2, repaired: true, repairs: repairList2 };
+                    } catch(e2) {}
+                }
+            }
+        }
+
+        // Fallback: return the first suffix attempt even if imperfect
+        return { text: text, repaired: existingSuffix.length > 0, repairs };
+    }
+
+    /**
+     * Repair a JSON string value that itself contains truncated JSON.
+     * E.g., a value like: "{\"key\":\"val\",\"arr\":[1,2,3"
+     * Should become:       "{\"key\":\"val\",\"arr\":[1,2,3]}"
+     */
+    function repairInnerJSONString(str) {
+        const trimmed = str.trim();
+        if ((!trimmed.startsWith('{') && !trimmed.startsWith('[')) ||
+            (trimmed.endsWith('}') || trimmed.endsWith(']'))) {
+            // Doesn't look truncated, or already complete
+            try { JSON.parse(trimmed); return { value: str, repaired: false }; }
+            catch(e) { /* fall through to repair */ }
+        }
+
+        const result = repairJSON(trimmed);
+        if (result.repaired) {
+            try {
+                JSON.parse(protectBN(result.text));
+                return { value: result.text, repaired: true };
+            } catch(e) {}
+        }
+
+        return { value: str, repaired: false };
+    }
+
+    // ============================================================
+    //  RESIZER
+    // ============================================================
+    {
+        const R=$('resizer'),L=$('panelLeft'),Ri=$('panelRight');
+        let drag=false,sx,lw,rw;
+        R.addEventListener('mousedown',e=>{drag=true;sx=e.clientX;lw=L.offsetWidth;rw=Ri.offsetWidth;document.body.style.cursor='col-resize';document.body.style.userSelect='none';});
+        document.addEventListener('mousemove',e=>{if(!drag)return;const dx=e.clientX-sx,tot=lw+rw;let nl=lw+dx,nr=rw-dx;if(nl<200){nl=200;nr=tot-200;}if(nr<200){nr=200;nl=tot-200;}L.style.flex='none';Ri.style.flex='none';L.style.width=nl+'px';Ri.style.width=nr+'px';});
+        document.addEventListener('mouseup',()=>{if(drag){drag=false;document.body.style.cursor='';document.body.style.userSelect='';}});
+    }
+
+    // Gutter sync
+    codeScroll.addEventListener('scroll',()=>{gutterEl.scrollTop=codeScroll.scrollTop;});
+
+    // Cursor info
+    codePre.addEventListener('keyup',updateCursor);
+    codePre.addEventListener('mouseup',updateCursor);
+    function updateCursor(){try{const sel=window.getSelection();if(!sel.rangeCount)return;const r=sel.getRangeAt(0),pr=document.createRange();pr.selectNodeContents(codePre);pr.setEnd(r.startContainer,r.startOffset);const b=pr.toString(),ls=b.split('\n');$('cursorInfo').textContent=`Ln ${ls.length}, Col ${ls[ls.length-1].length+1}`;}catch(e){}}
+
+    // ============================================================
+    //  BRACKET MATCHING
+    // ============================================================
+    codePre.addEventListener('click',function(e){
+        updateCursor();
+        const target=e.target, ch=target.textContent;
+        clearHL();
+        if((target.classList.contains('sbc')||target.classList.contains('sbr'))&&'{}[]'.includes(ch)){
+            e.preventDefault();
+            const all=Array.from(codePre.querySelectorAll('.sbc, .sbr'));
+            const idx=all.indexOf(target);
+            if(idx===-1)return;
+            const pairs={'{'  :'}','[':']'}, rev={'}':'{',']':'['};
+            let mi=-1;
+            if(pairs[ch]){let d=0;for(let i=idx;i<all.length;i++){const t=all[i].textContent;if(t===ch)d++;if(t===pairs[ch]){d--;if(d===0){mi=i;break;}}}}
+            else if(rev[ch]){let d=0;for(let i=idx;i>=0;i--){const t=all[i].textContent;if(t===ch)d++;if(t===rev[ch]){d--;if(d===0){mi=i;break;}}}}
+            target.classList.add('bm'); activeBracketA=target;
+            if(mi>=0){all[mi].classList.add('bmp');activeBracketB=all[mi];all[mi].scrollIntoView({block:'nearest',behavior:'smooth'});}
+            setTimeout(updateCursor,10);
+        }
+    });
+    function clearHL(){if(activeBracketA){activeBracketA.classList.remove('bm');activeBracketA=null;}if(activeBracketB){activeBracketB.classList.remove('bmp');activeBracketB=null;}}
+
+    // ============================================================
+    //  RENDER
+    // ============================================================
+    function renderGutter(){
+        if(!$('lineNums').checked||!rawOutput){gutterEl.style.display='none';gutterEl.innerHTML='';return;}
+        gutterEl.style.display='';
+        const n=rawOutput.split('\n').length;let h='';
+        for(let i=1;i<=n;i++)h+=`<span class="ln">${i}</span>`;
+        gutterEl.innerHTML=h;
+    }
+    function setOutput(text){rawOutput=text;clearHL();if(!text){codePre.innerHTML='';gutterEl.innerHTML='';gutterEl.style.display='none';return;}codePre.innerHTML=syntaxHL(text);renderGutter();}
+
+    // ============================================================
+    //  SYNTAX HIGHLIGHTER
+    // ============================================================
+    function syntaxHL(json){
+        let h=json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        h=h.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"\n])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g,
+        m=>{
+            if(/^"/.test(m)){if(/:$/.test(m))return`<span class="sk">${m.slice(0,-1)}</span><span class="sco">:</span>`;return`<span class="ss">${m}</span>`;}
+            if(/true|false/.test(m))return`<span class="sb">${m}</span>`;
+            if(/null/.test(m))return`<span class="snl">${m}</span>`;
+            if(/^-?\d/.test(m))return`<span class="sn">${m}</span>`;
+            if(m==='{'||m==='}')return`<span class="sbc">${m}</span>`;
+            if(m==='['||m===']')return`<span class="sbr">${m}</span>`;
+            if(m===',')return`<span class="scm">${m}</span>`;
+            if(m===':')return`<span class="sco">${m}</span>`;
+            return m;
+        });
+        return h;
+    }
+
+    // ============================================================
+    //  BIGINT-SAFE PARSER
+    // ============================================================
+    const BNP='__BIGNUM_',BNS='__';
+    function safeParse(s){return JSON.parse(protectBN(s));}
+    function protectBN(s){
+        let r='',i=0,inS=false,esc=false;
+        while(i<s.length){const c=s[i];if(inS){r+=c;if(esc)esc=false;else if(c==='\\')esc=true;else if(c==='"')inS=false;i++;continue;}if(c==='"'){inS=true;r+=c;i++;continue;}
+        if(c==='-'||(c>='0'&&c<='9')){let n='',j=i,fl=false;if(s[j]==='-'){n+='-';j++;}while(j<s.length&&s[j]>='0'&&s[j]<='9'){n+=s[j];j++;}if(j<s.length&&s[j]==='.'){fl=true;n+='.';j++;while(j<s.length&&s[j]>='0'&&s[j]<='9'){n+=s[j];j++;}}if(j<s.length&&(s[j]==='e'||s[j]==='E')){fl=true;n+=s[j];j++;if(j<s.length&&(s[j]==='+'||s[j]==='-')){n+=s[j];j++;}while(j<s.length&&s[j]>='0'&&s[j]<='9'){n+=s[j];j++;}}const d=n.replace(/^-/,'').replace(/\..*/,'');const need=!fl&&(d.length>=16||String(Number(n))!==n);r+=need?'"'+BNP+n+BNS+'"':n;i=j;continue;}r+=c;i++;}return r;
+    }
+    function safeStr(o,ind){const sp=ind==='\t'?'\t':' '.repeat(typeof ind==='number'?ind:2);return _s(o,0,sp);}
+    function safeStrMin(o){return _s(o,0,'');}
+    function _s(v,d,sp){
+        const pad=sp.repeat(d),kid=sp.repeat(d+1),nl=sp?'\n':'',g=sp?' ':'';
+        if(v===null||v===undefined)return'null';if(typeof v==='boolean'||typeof v==='number')return String(v);
+        if(typeof v==='string'){if(v.startsWith(BNP)&&v.endsWith(BNS))return v.slice(BNP.length,-BNS.length);return JSON.stringify(v);}
+        if(Array.isArray(v)){if(!v.length)return'[]';return'['+nl+v.map(x=>kid+_s(x,d+1,sp)).join(','+nl)+nl+pad+']';}
+        if(typeof v==='object'){const k=Object.keys(v);if(!k.length)return'{}';return'{'+nl+k.map(key=>kid+JSON.stringify(key)+':'+g+_s(v[key],d+1,sp)).join(','+nl)+nl+pad+'}';}
+        return String(v);
+    }
+
+    // ============================================================
+    //  MAP PARSER
+    // ============================================================
+    function tokMap(s){const T=[];let i=0;while(i<s.length){const c=s[i];if(/\s/.test(c)){i++;continue;}if('{[()]}=,'.includes(c)){T.push({t:c==='('?'[':c===')'?']':c});i++;continue;}if(c===':'){T.push({t:':'});i++;continue;}if(c==='"'||c==="'"){const q=c;let v='';i++;while(i<s.length){if(s[i]==='\\'&&i+1<s.length){v+=s[i]+s[i+1];i+=2;}else if(s[i]===q){i++;break;}else{v+=s[i];i++;}}T.push({t:'S',v});continue;}let v='';while(i<s.length&&!/[{}\[\]=,\s()]/.test(s[i])){if(s[i]===':'){if(s.substring(i).startsWith('://')||/^\d/.test(v)){v+=s[i];i++;continue;}break;}v+=s[i];i++;}if(v)T.push({t:'V',v});}return T;}
+    function cVal(v){if(v==='null')return null;if(v==='true')return true;if(v==='false')return false;if(/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(v)){const fl=v.includes('.')||v.includes('e')||v.includes('E');if(!fl){const d=v.replace(/^-/,'');if(d.length>=16||String(Number(v))!==v)return BNP+v+BNS;}const n=Number(v);if(!isNaN(n))return n;}return v;}
+    function parseMT(T){let p=0;const pk=()=>p<T.length?T[p]:null;const eat=x=>{const t=T[p];if(t&&(!x||t.t===x)){p++;return t;}return null;};
+    function pV(){const t=pk();if(!t)return null;if(t.t==='{')return pO();if(t.t==='[')return pA();if(t.t==='S'){eat();let v=t.v;try{v=JSON.parse('"'+v+'"');}catch(e){}const tr=v.trim();if((tr[0]==='{'&&tr.slice(-1)==='}')||(tr[0]==='['&&tr.slice(-1)===']')){try{return safeParse(tr);}catch(e){}}return v;}if(t.t==='V'){eat();return cVal(t.v);}eat();return null;}
+    function pO(){eat('{');const o={};while(true){const t=pk();if(!t||t.t==='}'){eat('}');break;}if(t.t===','){eat();continue;}let k;if(t.t==='S'||t.t==='V'){eat();k=t.v;}else{eat();continue;}const s=pk();if(s&&(s.t==='='||s.t===':'))eat();o[k]=pV();}return o;}
+    function pA(){eat('[');const a=[];while(true){const t=pk();if(!t||t.t===']'){eat(']');break;}if(t.t===','){eat();continue;}a.push(pV());}return a;}
+    const f=pk();if(f&&f.t==='{')return pO();if(f&&f.t==='[')return pA();
+    const o={};while(p<T.length){const t=pk();if(!t)break;if(t.t===','){eat();continue;}let k;if(t.t==='S'||t.t==='V'){eat();k=t.v;}else{eat();continue;}const s=pk();if(s&&(s.t==='='||s.t===':'))eat();o[k]=pV();}return o;}
+    function isMap(s){const t=s.trim();try{JSON.parse(t);return false;}catch(e){}if((t[0]==='"'&&t.slice(-1)==='"')||(t[0]==="'"&&t.slice(-1)==="'")){try{const u=JSON.parse(t);if(typeof u==='string'){JSON.parse(u);return false;}}catch(e){}}if(/(?:^|[,\s{])[\w.]+\s*=\s*[{"\[\w\d-]/.test(t))return true;return/(?:^|[,\s{])[a-zA-Z_]\w*\s*[:=]\s*/.test(t)&&!/"[\w]+"[\s]*:/.test(t.substring(0,200));}
+
+    // ============================================================
+    //  CORE PARSE — with auto-repair
+    // ============================================================
+    let lastRepairs = []; // track repairs for status display
+
+    function deepParse(input){
+        if(typeof input!=='string')return input;
+        let t=input.trim();
+        lastRepairs = [];
+
+        // Try repair if enabled
+        const shouldRepair = $('autoRepair').checked;
+
+        if(isMap(t)){try{setFB('map');return srt(parseMT(tokMap(t)));}catch(e){}}
+        setFB('json');
+
+        if((t[0]==='"'&&t.slice(-1)==='"')||(t[0]==="'"&&t.slice(-1)==="'")){
+            try{t=JSON.parse(t);if(typeof t==='string')return deepParse(t);return srt(t);}
+            catch(e){t=t.slice(1,-1).replace(/\\"/g,'"').replace(/\\\\/g,'\\').replace(/\\n/g,'\n').replace(/\\t/g,'\t').replace(/\\r/g,'\r');return deepParse(t);}
+        }
+
+        // Try direct parse
+        try{const p=safeParse(t);if(typeof p==='string')return deepParse(p);return srt(p);}
+        catch(e){
+            // Try common fixes
+            let f=t.replace(/,\s*([\]}])/g,'$1');
+            try{return srt(safeParse(f));}catch(e2){}
+
+            if(f.includes('}{')){try{return srt(safeParse('['+f.replace(/}\s*{/g,'},{')+']'));}catch(e3){}}
+            const m=t.match(/[\[{][\s\S]*[\]}]/);if(m){try{return srt(safeParse(m[0]));}catch(e4){}}
+
+            // Try map parser
+            try{const r=parseMT(tokMap(t));if(r&&typeof r==='object'&&Object.keys(r).length){setFB('map');return srt(r);}}catch(e5){}
+
+            // AUTO-REPAIR: try to fix truncated JSON
+            if(shouldRepair){
+                const repaired = repairJSON(t);
+                if(repaired.repaired){
+                    try{
+                        const p = safeParse(repaired.text);
+                        lastRepairs = repaired.repairs;
+                        return srt(typeof p==='string' ? deepParse(p) : p);
+                    }catch(e6){}
+                }
+            }
+
+            throw new Error(`Unable to parse: ${e.message}`);
+        }
+    }
+
+    function srt(o){return $('sortKeys').checked?sortK(o):o;}
+    function sortK(o){if(Array.isArray(o))return o.map(sortK);if(o&&typeof o==='object'){const s={};Object.keys(o).sort().forEach(k=>s[k]=sortK(o[k]));return s;}return o;}
+
+    /**
+     * Deep unescape: recursively parse string values that contain JSON.
+     * NOW with auto-repair for truncated inner JSON strings.
+     */
+    function deepUn(o){
+        if(typeof o==='string'){
+            if(o.startsWith(BNP)&&o.endsWith(BNS))return o;
+            const t=o.trim();
+            if((t[0]==='{'||t[0]==='[')){
+                // First try direct parse
+                try{return deepUn(safeParse(t));}catch(e){
+                    // Try auto-repair on this inner string
+                    if($('autoRepair').checked){
+                        const rep = repairInnerJSONString(t);
+                        if(rep.repaired){
+                            try{
+                                const parsed = safeParse(rep.value);
+                                lastRepairs.push('Repaired nested JSON string');
+                                return deepUn(parsed);
+                            }catch(e2){}
+                        }
+                    }
+                    if(isMap(t)){try{return deepUn(parseMT(tokMap(t)));}catch(e2){}}
+                    return o;
+                }
+            }
+            return o;
+        }
+        if(Array.isArray(o))return o.map(deepUn);
+        if(o&&typeof o==='object'){const r={};for(const k in o)r[k]=deepUn(o[k]);return r;}
+        return o;
+    }
+
+    // ============================================================
+    //  UI
+    // ============================================================
+    function getInd(){const v=$('indentSize').value;return v==='tab'?'\t':Number(v);}
+    function setStatus(m,t){const el=$('statusMsg');el.textContent=m;el.className='status-msg '+(t==='success'?'ok':t==='error'?'err':t==='warn'?'warn':'info');}
+    function setFB(t){$('fmtBadge').innerHTML=t==='map'?'<span class="format-badge map">MAP</span>':t==='json'?'<span class="format-badge json">JSON</span>':'';}
+    function setRepairBadge(repairs){
+        if(repairs.length){
+            $('repairBadge').innerHTML=`<span class="repair-badge">🩹 ${repairs.length} repair(s)</span>`;
+        }else{
+            $('repairBadge').innerHTML='';
+        }
+    }
+    function toggleTheme(){document.body.classList.toggle('light',$('themeSelect').value==='light');}
+
+    function beautify(){
+        const inp=$('input').value;
+        if(!inp.trim()){setStatus('⚠️ Paste some data first.','error');setOutput('');setFB('');setRepairBadge([]);return;}
+        try{
+            lastRepairs=[];
+            let p=deepParse(inp);
+            if($('autoDetect').checked) p=deepUn(p);
+            setOutput(safeStr(p,getInd()));
+            setRepairBadge(lastRepairs);
+            const ks=Array.isArray(p)?`Array [${p.length}]`:(p&&typeof p==='object')?`Object {${Object.keys(p).length} keys}`:typeof p;
+            if(lastRepairs.length){
+                setStatus(`✅ Beautified with 🩹 ${lastRepairs.length} auto-repair(s): ${lastRepairs.join(', ')}`,'warn');
+            }else{
+                setStatus(`✅ Beautified! — ${ks}`,'success');
+            }
+        }catch(e){setOutput('');setRepairBadge([]);setStatus('❌ '+e.message,'error');}
+    }
+
+    function reformatOutput(){
+        const text=codePre.textContent;
+        if(!text.trim()){setStatus('⚠️ Output is empty.','error');return;}
+        try{setOutput(safeStr(safeParse(text),getInd()));setStatus('🔄 Re-formatted!','success');}
+        catch(e){setStatus('❌ Invalid JSON: '+e.message,'error');}
+    }
+
+    function doMinify(){
+        const inp=$('input').value;
+        if(!inp.trim()){setStatus('⚠️ Paste some data first.','error');setOutput('');return;}
+        try{lastRepairs=[];const p=deepParse(inp);setOutput(safeStrMin(p));setRepairBadge(lastRepairs);
+            if(lastRepairs.length)setStatus(`✅ Minified with 🩹 ${lastRepairs.length} repair(s)`,'warn');
+            else setStatus('✅ Minified!','success');
+        }catch(e){setOutput('');setStatus('❌ '+e.message,'error');}
+    }
+
+    function copyOutput(){
+        const text=codePre.textContent;
+        if(!text){setStatus('⚠️ Nothing to copy.','error');return;}
+        navigator.clipboard.writeText(text).then(()=>setStatus('📋 Copied!','success')).catch(()=>{document.execCommand('copy');setStatus('📋 Copied!','success');});
+    }
+
+    function clearAll(){$('input').value='';setOutput('');setFB('');setRepairBadge([]);setStatus('🗑️ Cleared.','info');}
+
+    function loadJSON(){
+        $('input').value=`{"name":"JSON Beautifier","version":"4.0","large_id":6964908000002451283,"nested":"{\\"user\\":{\\"id\\":6964908000002451283,\\"roles\\":[\\"admin\\",\\"editor\\"]}}","config":{"theme":"dark","indent":2},"items":[1,2,3],"active":true,"meta":null}`;
+        setStatus('📄 JSON loaded — click Beautify!','info');
+    }
+
+    function loadMap(){
+        $('input').value=`{7556771000000090034={"record_start_index":2,"pptr_response_code":"106","failed_records":"[7556771000000090034]","end_time":"1771916639877","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916609796,"pptr_end_time":"1771916638966","pptr_start_time":"1771916627529","start_time":"1771916627463","filepath":[],"limit":1,"status":"failed"}, record_completed_count=1, credit_points_info={"credit_expiry_records" : []}, 7556771000000090033={"record_start_index":1,"pptr_response_code":-1,"failed_records":"[]","end_time":"1771916687465","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916671276,"pptr_end_time":-1,"pptr_start_time":-1,"start_time":"1771916687465","filepath":[],"limit":10,"status":"success"}, info={"imagecount":1,"priority_value":10,"job_end_time":-1,"job_start_time":1771916453668,"credit_points_info":{"credit_expiry_records":[]},"retry_limit":2,"retries":2,"job_status":0,"total_record_count":3,"isBufferMerge":false,"batch_index":4,"is_priority_fixed":true,"plan":"","batch_ids":[7556771000000090032,7556771000000090033,7556771000000090034,7556771000000090033]}, failed_record_count=2, 7556771000000090032={"record_start_index":0,"pptr_response_code":"106","failed_records":"[]","end_time":"1771916671096","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916609779,"pptr_end_time":"1771916638766","pptr_start_time":"1771916627538","start_time":"1771916627462","filepath":[],"limit":1,"status":"success"}}`;
+        setStatus('📄 Map loaded — click Beautify!','info');
+    }
+
+    $('input').addEventListener('paste',()=>setTimeout(beautify,100));
+    document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();beautify();}});
+    </script>
+</body>
+</html>
