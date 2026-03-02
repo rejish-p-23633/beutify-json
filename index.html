@@ -157,6 +157,7 @@
         .format-badge.csv  { background: #fce4ec; color: #880e4f; }
         .format-badge.query{ background: #f3e5f5; color: #6a1b9a; }
         .format-badge.base64{ background: #e0f7fa; color: #00695c; }
+        .format-badge.md   { background: #e8eaf6; color: #1a237e; }
         /* Type indicator badges */
         .st-url,.st-email,.st-date,.st-uuid,.st-base64,.st-empty,.st-color{
             font-size:0.7em;margin-left:3px;vertical-align:middle;opacity:0.85;
@@ -199,6 +200,53 @@
         body.light .sx-val { color:#0000ff; }
         body.light .sx-txt { color:#333; }
         body.light .sx-dec { color:#808080; }
+        /* Markdown preview */
+        .md-preview {
+            padding: 16px 20px; color: #d4d4d4; font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+            font-size: 14px; line-height: 1.7; overflow: auto; flex: 1;
+        }
+        .md-preview h1 { font-size: 1.8em; margin: 0.5em 0 0.3em; padding-bottom: 0.2em; border-bottom: 1px solid #444; color: #7cc4fa; }
+        .md-preview h2 { font-size: 1.5em; margin: 0.5em 0 0.3em; padding-bottom: 0.15em; border-bottom: 1px solid #333; color: #7cc4fa; }
+        .md-preview h3 { font-size: 1.25em; margin: 0.5em 0 0.2em; color: #9cdcfe; }
+        .md-preview h4 { font-size: 1.1em; margin: 0.4em 0 0.2em; color: #9cdcfe; }
+        .md-preview h5, .md-preview h6 { font-size: 1em; margin: 0.4em 0 0.2em; color: #9cdcfe; }
+        .md-preview p { margin: 0.5em 0; }
+        .md-preview a { color: #4fc3f7; text-decoration: underline; }
+        .md-preview strong { color: #e8c46c; }
+        .md-preview em { color: #c5a5d6; font-style: italic; }
+        .md-preview code {
+            background: #2d2d2d; color: #ce9178; padding: 2px 6px; border-radius: 3px;
+            font-family: 'Fira Code','Consolas',monospace; font-size: 0.9em;
+        }
+        .md-preview pre { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 12px; margin: 0.6em 0; overflow-x: auto; }
+        .md-preview pre code { background: none; color: #d4d4d4; padding: 0; font-size: 0.88em; }
+        .md-preview blockquote {
+            border-left: 4px solid #4fc3f7; margin: 0.5em 0; padding: 6px 14px;
+            background: rgba(79,195,247,0.08); color: #aaa; font-style: italic;
+        }
+        .md-preview ul, .md-preview ol { margin: 0.4em 0 0.4em 1.5em; }
+        .md-preview li { margin: 0.15em 0; }
+        .md-preview hr { border: none; border-top: 1px solid #444; margin: 1em 0; }
+        .md-preview img { max-width: 100%; border-radius: 6px; margin: 0.4em 0; }
+        .md-preview table { border-collapse: collapse; margin: 0.6em 0; width: auto; }
+        .md-preview th, .md-preview td { border: 1px solid #444; padding: 6px 12px; text-align: left; }
+        .md-preview th { background: #2a2a2a; color: #9cdcfe; font-weight: 600; }
+        .md-preview td { background: #1e1e1e; }
+        /* Light theme markdown */
+        body.light .md-preview { color: #1e1e1e; }
+        body.light .md-preview h1, body.light .md-preview h2 { color: #1a73e8; border-bottom-color: #ddd; }
+        body.light .md-preview h3, body.light .md-preview h4, body.light .md-preview h5, body.light .md-preview h6 { color: #0d47a1; }
+        body.light .md-preview a { color: #1565c0; }
+        body.light .md-preview strong { color: #bf360c; }
+        body.light .md-preview em { color: #6a1b9a; }
+        body.light .md-preview code { background: #f5f5f5; color: #c62828; }
+        body.light .md-preview pre { background: #fafafa; border-color: #ddd; }
+        body.light .md-preview pre code { color: #333; }
+        body.light .md-preview blockquote { border-left-color: #1a73e8; background: rgba(26,115,232,0.06); color: #666; }
+        body.light .md-preview hr { border-top-color: #ddd; }
+        body.light .md-preview th { background: #f0f0f0; color: #0d47a1; }
+        body.light .md-preview td { background: #fff; }
+        body.light .md-preview th, body.light .md-preview td { border-color: #ddd; }
         @media (max-width: 768px) {
             .main { flex-direction: column; }
             .resizer { width: 100%; height: 10px; cursor: row-resize; }
@@ -210,7 +258,7 @@
 <body>
     <div class="header">
         <h1>🔧 JSON Beautifier</h1>
-        <div class="sub">JSON · XML · CSV · Query · Base64 · Map/toString() → editable, color-coded output · 🔒 large number safe · 🩹 auto-repairs truncated JSON</div>
+        <div class="sub">JSON · XML · CSV · Query · Base64 · Markdown · Map/toString() → editable, color-coded output · 🔒 large number safe · 🩹 auto-repairs truncated JSON</div>
     </div>
     <div class="opts">
         <label>Indent: <select id="indentSize"><option value="2" selected>2</option><option value="4">4</option><option value="tab">Tab</option></select></label>
@@ -233,11 +281,12 @@
         <button class="b-sample" onclick="loadQuery()">📄 Query</button>
         <button class="b-sample2" onclick="loadBase64()">📄 Base64</button>
         <button class="b-sample" onclick="loadAllTypes()">🌈 All Types</button>
+        <button class="b-sample2" onclick="loadMarkdown()">📄 MD</button>
     </div>
     <div class="main">
         <div class="panel panel-left" id="panelLeft">
             <div class="panel-head">📥 Input <span id="fmtBadge"></span></div>
-            <textarea id="input" placeholder="Paste JSON, XML, CSV, Query String, Base64, Map, or messy data here...&#10;&#10;💡 Auto-beautifies on paste&#10;⌨️ Ctrl+Enter to beautify&#10;🩹 Truncated JSON is auto-repaired"></textarea>
+            <textarea id="input" placeholder="Paste JSON, XML, CSV, Query String, Base64, Markdown, Map, or messy data here...&#10;&#10;💡 Auto-beautifies on paste&#10;⌨️ Ctrl+Enter to beautify&#10;🩹 Truncated JSON is auto-repaired"></textarea>
         </div>
         <div class="resizer" id="resizer"></div>
         <div class="panel panel-right" id="panelRight">
@@ -515,7 +564,7 @@
         for(let i=1;i<=n;i++)h+=`<span class="ln">${i}</span>`;
         gutterEl.innerHTML=h;
     }
-    function setOutput(text,mode){rawOutput=text;clearHL();if(!text){codePre.innerHTML='';gutterEl.innerHTML='';gutterEl.style.display='none';return;}codePre.innerHTML=mode==='xml'?syntaxHLxml(text):syntaxHL(text);renderGutter();}
+    function setOutput(text,mode){rawOutput=text;clearHL();if(!text){codePre.innerHTML='';gutterEl.innerHTML='';gutterEl.style.display='none';codePre.className='code-pre';codePre.contentEditable='true';return;}if(mode==='md'){codePre.className='md-preview';codePre.contentEditable='false';codePre.innerHTML=text;gutterEl.style.display='none';gutterEl.innerHTML='';return;}codePre.className='code-pre';codePre.contentEditable='true';codePre.innerHTML=mode==='xml'?syntaxHLxml(text):syntaxHL(text);renderGutter();}
 
     // ============================================================
     //  SYNTAX HIGHLIGHTER
@@ -725,6 +774,114 @@
     function decodeBase64(s){return atob(s.trim());}
 
     // ============================================================
+    //  MARKDOWN DETECTION & RENDERER
+    // ============================================================
+    function isMarkdown(s){
+        const t=s.trim();
+        // Must have at least 2 lines or a clear MD pattern
+        const mdPatterns=[
+            /^#{1,6}\s+\S/m,           // headings
+            /^\s*[-*+]\s+\S/m,         // unordered lists
+            /^\s*\d+\.\s+\S/m,         // ordered lists
+            /^\s*>\s+/m,               // blockquotes
+            /\[.+?\]\(.+?\)/,          // links
+            /!\[.*?\]\(.+?\)/,         // images
+            /^```/m,                   // fenced code blocks
+            /^\s*---\s*$/m,            // horizontal rules
+            /^\s*\*\*\*\s*$/m,         // horizontal rules alt
+            /\*\*.+?\*\*/,             // bold
+            /\*.+?\*/,                 // italic
+            /`.+?`/,                   // inline code
+            /^\|.+\|/m,               // tables
+        ];
+        let hits=0;
+        for(const p of mdPatterns){if(p.test(t))hits++;}
+        // Need at least 2 different markdown patterns to consider it markdown
+        // (to avoid false positives with JSON/XML etc.)
+        return hits>=2;
+    }
+
+    function renderMarkdown(s){
+        const esc=t=>t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        let html='';
+        // Extract fenced code blocks first to protect them
+        const codeBlocks=[];
+        s=s.replace(/```(\w*)\n([\s\S]*?)```/g,(_,lang,code)=>{
+            const idx=codeBlocks.length;
+            codeBlocks.push('<pre><code>'+esc(code.replace(/\n$/,''))+'</code></pre>');
+            return'\n%%CODEBLOCK_'+idx+'%%\n';
+        });
+        const lines=s.split('\n');
+        let inList=false,listType='',inTable=false;
+        function closeList(){if(inList){html+=listType==='ul'?'</ul>':'</ol>';inList=false;}}
+        function closeTable(){if(inTable){html+='</tbody></table>';inTable=false;}}
+        function inline(t){
+            // images before links
+            t=t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<img src="$2" alt="'+'"'+'$1" />');
+            // Fix the image alt attribute
+            t=t.replace(/<img src="([^"]*)" alt=""([^"]*)" \/>/g,'<img src="$1" alt="$2" />');
+            // links
+            t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<a href="$2">$1</a>');
+            // bold+italic
+            t=t.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>');
+            // bold
+            t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+            t=t.replace(/__(.+?)__/g,'<strong>$1</strong>');
+            // italic
+            t=t.replace(/\*(.+?)\*/g,'<em>$1</em>');
+            t=t.replace(/_(.+?)_/g,'<em>$1</em>');
+            // strikethrough
+            t=t.replace(/~~(.+?)~~/g,'<del>$1</del>');
+            // inline code
+            t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+            return t;
+        }
+        for(let i=0;i<lines.length;i++){
+            let line=lines[i];
+            // Code block placeholder
+            const cbMatch=line.match(/^%%CODEBLOCK_(\d+)%%$/);
+            if(cbMatch){closeList();closeTable();html+=codeBlocks[Number(cbMatch[1])];continue;}
+            // Horizontal rule
+            if(/^\s*(---|\*\*\*|___)\s*$/.test(line)){closeList();closeTable();html+='<hr>';continue;}
+            // Headings
+            const hm=line.match(/^(#{1,6})\s+(.+)$/);
+            if(hm){closeList();closeTable();const lv=hm[1].length;html+=`<h${lv}>`+inline(esc(hm[2]))+`</h${lv}>`;continue;}
+            // Table
+            if(/^\|.+\|/.test(line)){
+                closeList();
+                if(!inTable){
+                    // Start table: parse header
+                    const cells=line.split('|').filter((_,idx,arr)=>idx>0&&idx<arr.length-1).map(c=>c.trim());
+                    html+='<table><thead><tr>'+cells.map(c=>'<th>'+inline(esc(c))+'</th>').join('')+'</tr></thead><tbody>';
+                    inTable=true;
+                    // Skip separator row
+                    if(i+1<lines.length&&/^\|[\s:|-]+\|$/.test(lines[i+1]))i++;
+                    continue;
+                }else{
+                    const cells=line.split('|').filter((_,idx,arr)=>idx>0&&idx<arr.length-1).map(c=>c.trim());
+                    html+='<tr>'+cells.map(c=>'<td>'+inline(esc(c))+'</td>').join('')+'</tr>';
+                    continue;
+                }
+            }else{closeTable();}
+            // Blockquote
+            if(/^\s*>\s?(.*)$/.test(line)){closeList();const m=line.match(/^\s*>\s?(.*)$/);html+='<blockquote>'+inline(esc(m[1]))+'</blockquote>';continue;}
+            // Unordered list
+            const ulm=line.match(/^\s*[-*+]\s+(.+)$/);
+            if(ulm){closeTable();if(!inList||listType!=='ul'){closeList();html+='<ul>';inList=true;listType='ul';}html+='<li>'+inline(esc(ulm[1]))+'</li>';continue;}
+            // Ordered list
+            const olm=line.match(/^\s*\d+\.\s+(.+)$/);
+            if(olm){closeTable();if(!inList||listType!=='ol'){closeList();html+='<ol>';inList=true;listType='ol';}html+='<li>'+inline(esc(olm[1]))+'</li>';continue;}
+            closeList();
+            // Empty line
+            if(!line.trim()){continue;}
+            // Paragraph
+            html+='<p>'+inline(esc(line))+'</p>';
+        }
+        closeList();closeTable();
+        return html;
+    }
+
+    // ============================================================
     //  MAP PARSER
     // ============================================================
     function tokMap(s){const T=[];let i=0;while(i<s.length){const c=s[i];if(/\s/.test(c)){i++;continue;}if('{[()]}=,'.includes(c)){T.push({t:c==='('?'[':c===')'?']':c});i++;continue;}if(c===':'){T.push({t:':'});i++;continue;}if(c==='"'||c==="'"){const q=c;let v='';i++;while(i<s.length){if(s[i]==='\\'&&i+1<s.length){v+=s[i]+s[i+1];i+=2;}else if(s[i]===q){i++;break;}else{v+=s[i];i++;}}T.push({t:'S',v});continue;}let v='';while(i<s.length&&!/[{}\[\]=,\s()]/.test(s[i])){if(s[i]===':'){if(s.substring(i).startsWith('://')||/^\d/.test(v)){v+=s[i];i++;continue;}break;}v+=s[i];i++;}if(v)T.push({t:'V',v});}return T;}
@@ -828,7 +985,7 @@
     // ============================================================
     function getInd(){const v=$('indentSize').value;return v==='tab'?'\t':Number(v);}
     function setStatus(m,t){const el=$('statusMsg');el.textContent=m;el.className='status-msg '+(t==='success'?'ok':t==='error'?'err':t==='warn'?'warn':'info');}
-    function setFB(t){const labels={json:'JSON',map:'MAP',xml:'XML',csv:'CSV',query:'QUERY',base64:'BASE64'};$('fmtBadge').innerHTML=labels[t]?`<span class="format-badge ${t}">${labels[t]}</span>`:'';}
+    function setFB(t){const labels={json:'JSON',map:'MAP',xml:'XML',csv:'CSV',query:'QUERY',base64:'BASE64',md:'MD'};$('fmtBadge').innerHTML=labels[t]?`<span class="format-badge ${t}">${labels[t]}</span>`:'';}
     function setRepairBadge(repairs){
         if(repairs.length){
             $('repairBadge').innerHTML=`<span class="repair-badge">🩹 ${repairs.length} repair(s)</span>`;
@@ -853,6 +1010,17 @@
                 setOutput(pretty,'xml');
                 setRepairBadge([]);
                 setStatus(`✅ Beautified! — XML Document — ${elCount} element${elCount!==1?'s':''}`,'success');
+                return;
+            }
+
+            // Markdown detection
+            if(isMarkdown(trimmed)){
+                setFB('md');
+                const rendered=renderMarkdown(trimmed);
+                setOutput(rendered,'md');
+                setRepairBadge([]);
+                const lineCount=trimmed.split('\n').length;
+                setStatus(`✅ Rendered! — Markdown — ${lineCount} line${lineCount!==1?'s':''}`,'success');
                 return;
             }
 
@@ -998,6 +1166,63 @@
             "theme_colors":{"primary":"#0d47a1","secondary":"#ff9800","success":"#4caf50","danger":"#f44336","info":"#2196f3","warning":"#ffc107"}
         });
         setStatus('🌈 All Types sample loaded — click Beautify!','info');
+    }
+
+    function loadMarkdown(){
+        $('input').value=`# Markdown Preview Demo
+
+Welcome to the **Markdown preview** feature! This showcases all supported elements.
+
+## Text Formatting
+
+This is **bold text**, this is *italic text*, and this is ***bold italic***.
+You can also use ~~strikethrough~~ and \`inline code\`.
+
+## Links & Images
+
+- Visit [GitHub](https://github.com) for code hosting
+- Send mail to [support@example.com](mailto:support@example.com)
+- ![Placeholder](https://via.placeholder.com/200x80?text=Image+Preview)
+
+## Lists
+
+### Unordered
+- First item
+- Second item
+- Third item with \`code\`
+
+### Ordered
+1. Step one
+2. Step two
+3. Step three
+
+## Blockquote
+
+> "The best way to predict the future is to invent it."
+> — Alan Kay
+
+## Code Block
+
+\`\`\`javascript
+function greet(name) {
+  return \`Hello, \${name}!\`;
+}
+console.log(greet("World"));
+\`\`\`
+
+## Table
+
+| Feature   | Status | Notes            |
+|-----------|--------|------------------|
+| JSON      | ✅     | Full support     |
+| XML       | ✅     | Syntax highlight |
+| CSV       | ✅     | Auto-convert     |
+| Markdown  | ✅     | Rich preview     |
+
+---
+
+*That's all folks!* 🎉`;
+        setStatus('📄 Markdown loaded — click Beautify!','info');
     }
 
     $('input').addEventListener('paste',()=>setTimeout(beautify,100));
