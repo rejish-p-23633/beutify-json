@@ -603,11 +603,54 @@
         return formatted.trimEnd();
     }
     function syntaxHLxml(xml){
-        let h=xml.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        h=h.replace(/(&lt;\/?)([\w:.-]+)/g,'$1<span class="sx-tag">$2</span>');
-        h=h.replace(/([\w:.-]+)(=)(&quot;|")/g,'<span class="sx-attr">$1</span>$2$3');
-        h=h.replace(/(&lt;\?[\s\S]*?\?&gt;)/g,'<span class="sx-dec">$1</span>');
-        return h;
+        const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        let out='',i=0;
+        while(i<xml.length){
+            if(xml[i]==='<'){
+                // Processing instruction <?...?>
+                if(xml.substring(i,i+2)==='<?'){
+                    let j=xml.indexOf('?>',i);if(j===-1)j=xml.length-2;j+=2;
+                    out+='<span class="sx-dec">'+esc(xml.substring(i,j))+'</span>';i=j;continue;
+                }
+                // Comment <!--...-->
+                if(xml.substring(i,i+4)==='<!--'){
+                    let j=xml.indexOf('-->',i);if(j===-1)j=xml.length-3;j+=3;
+                    out+='<span class="sx-dec">'+esc(xml.substring(i,j))+'</span>';i=j;continue;
+                }
+                // Closing tag </tag>
+                if(xml[i+1]==='/'){
+                    let j=xml.indexOf('>',i);if(j===-1)j=xml.length-1;
+                    const inner=xml.substring(i+2,j).trim();
+                    out+='&lt;/<span class="sx-tag">'+esc(inner)+'</span>&gt;';i=j+1;continue;
+                }
+                // Opening/self-closing tag
+                let j=xml.indexOf('>',i);if(j===-1)j=xml.length-1;
+                const selfClose=xml[j-1]==='/';
+                const tagContent=xml.substring(i+1,selfClose?j-1:j);
+                const parts=tagContent.match(/^([\w:.-]+)([\s\S]*)$/);
+                if(parts){
+                    const tagName=parts[1],rest=parts[2];
+                    out+='&lt;<span class="sx-tag">'+esc(tagName)+'</span>';
+                    // Parse attributes
+                    const attrRe=/([\w:.-]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+                    let lastIdx=0,m;
+                    while((m=attrRe.exec(rest))!==null){
+                        out+=esc(rest.substring(lastIdx,m.index));
+                        out+='<span class="sx-attr">'+esc(m[1])+'</span>=<span class="sx-val">'+esc(m[2])+'</span>';
+                        lastIdx=attrRe.lastIndex;
+                    }
+                    if(lastIdx<rest.length)out+=esc(rest.substring(lastIdx));
+                    out+=(selfClose?'/':'')+'&gt;';
+                }else{out+=esc(xml.substring(i,j+1));}
+                i=j+1;continue;
+            }
+            // Text node
+            let j=xml.indexOf('<',i);if(j===-1)j=xml.length;
+            const txt=xml.substring(i,j);
+            if(txt.trim())out+='<span class="sx-txt">'+esc(txt)+'</span>';else out+=esc(txt);
+            i=j;
+        }
+        return out;
     }
     function countXMLElements(s){return(s.match(/<[a-zA-Z][^\/]*?>/g)||[]).length;}
 
