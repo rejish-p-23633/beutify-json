@@ -548,7 +548,7 @@
         if(/^https?:\/\//i.test(s))return'<span class="st-url"> 🔗</span>';
         if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))return'<span class="st-email"> 📧</span>';
         if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return'<span class="st-uuid"> 🆔</span>';
-        if(/^#([0-9a-fA-F]{3}){1,2}$/.test(s)){const c=s.length===4?'#'+s[1]+s[1]+s[2]+s[2]+s[3]+s[3]:s;return`<span class="st-color" style="background:${c}"></span>`;}
+        if(/^#([0-9a-fA-F]{3}){1,2}$/.test(s)){const c=s.length===4?'#'+s[1]+s[1]+s[2]+s[2]+s[3]+s[3]:s;return`<span class="st-color" style="background:${c.replace(/[^#0-9a-fA-F]/g,'')}"></span>`;}
         if(/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(s)||/^\d{4}-\d{2}-\d{2}$/.test(s))return'<span class="st-date"> 📅</span>';
         if(s.length>=16&&s.length<=65536&&/^[A-Za-z0-9+\/]+=*$/.test(s))return'<span class="st-base64"> 🔐</span>';
         return'';
@@ -873,8 +873,6 @@
             if(isBase64(trimmed)){
                 setFB('base64');
                 const decoded=decodeBase64(trimmed);
-                // Try to process decoded content recursively
-                $('input').value=decoded;
                 const inner=decoded.trim();
                 if(isXML(inner)){
                     const pretty=beautifyXML(inner);
@@ -885,6 +883,7 @@
                 }
                 try{
                     let p=deepParse(decoded);
+                    setFB('base64');
                     if($('autoDetect').checked)p=deepUn(p);
                     setOutput(safeStr(p,getInd()));
                     setRepairBadge(lastRepairs);
