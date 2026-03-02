@@ -153,6 +153,52 @@
         }
         .format-badge.json { background: #e8f5e9; color: #2e7d32; }
         .format-badge.map  { background: #fff3e0; color: #e65100; }
+        .format-badge.xml  { background: #e8eaf6; color: #283593; }
+        .format-badge.csv  { background: #fce4ec; color: #880e4f; }
+        .format-badge.query{ background: #f3e5f5; color: #6a1b9a; }
+        .format-badge.base64{ background: #e0f7fa; color: #00695c; }
+        /* Type indicator badges */
+        .st-url,.st-email,.st-date,.st-uuid,.st-base64,.st-empty,.st-color{
+            font-size:0.7em;margin-left:3px;vertical-align:middle;opacity:0.85;
+        }
+        .st-url   { color:#4fc3f7; }
+        .st-email { color:#81c784; }
+        .st-date  { color:#ffb74d; }
+        .st-uuid  { color:#ba68c8; }
+        .st-base64{ color:#4db6ac; }
+        .st-empty { color:#888;font-style:italic;font-size:0.75em; }
+        .st-color { display:inline-block;width:10px;height:10px;border-radius:2px;margin-left:4px;vertical-align:middle;border:1px solid rgba(255,255,255,0.3); }
+        .ss-url   { color:#4fc3f7; }
+        .ss-email { color:#81c784; }
+        .ss-date  { color:#ffb74d; }
+        .ss-uuid  { color:#ba68c8; }
+        .ss-base64{ color:#4db6ac; }
+        .ss-empty { color:#666;font-style:italic; }
+        /* Light theme type indicators */
+        body.light .st-url   { color:#0277bd; }
+        body.light .st-email { color:#2e7d32; }
+        body.light .st-date  { color:#e65100; }
+        body.light .st-uuid  { color:#6a1b9a; }
+        body.light .st-base64{ color:#00695c; }
+        body.light .st-empty { color:#999; }
+        body.light .st-color { border-color:rgba(0,0,0,0.3); }
+        body.light .ss-url   { color:#0277bd; }
+        body.light .ss-email { color:#2e7d32; }
+        body.light .ss-date  { color:#e65100; }
+        body.light .ss-uuid  { color:#6a1b9a; }
+        body.light .ss-base64{ color:#00695c; }
+        body.light .ss-empty { color:#999; }
+        /* XML syntax classes */
+        .sx-tag { color:#569cd6; }
+        .sx-attr{ color:#9cdcfe; }
+        .sx-val { color:#ce9178; }
+        .sx-txt { color:#d4d4d4; }
+        .sx-dec { color:#808080; }
+        body.light .sx-tag { color:#800000; }
+        body.light .sx-attr{ color:#ff0000; }
+        body.light .sx-val { color:#0000ff; }
+        body.light .sx-txt { color:#333; }
+        body.light .sx-dec { color:#808080; }
         @media (max-width: 768px) {
             .main { flex-direction: column; }
             .resizer { width: 100%; height: 10px; cursor: row-resize; }
@@ -164,7 +210,7 @@
 <body>
     <div class="header">
         <h1>🔧 JSON Beautifier</h1>
-        <div class="sub">JSON · Map/toString() · escaped strings → editable, color-coded output · 🔒 large number safe · 🩹 auto-repairs truncated JSON</div>
+        <div class="sub">JSON · XML · CSV · Query · Base64 · Map/toString() → editable, color-coded output · 🔒 large number safe · 🩹 auto-repairs truncated JSON</div>
     </div>
     <div class="opts">
         <label>Indent: <select id="indentSize"><option value="2" selected>2</option><option value="4">4</option><option value="tab">Tab</option></select></label>
@@ -182,11 +228,16 @@
         <button class="b-clear" onclick="clearAll()">🗑️ Clear</button>
         <button class="b-sample" onclick="loadJSON()">📄 JSON</button>
         <button class="b-sample2" onclick="loadMap()">📄 Map</button>
+        <button class="b-sample" onclick="loadXML()">📄 XML</button>
+        <button class="b-sample2" onclick="loadCSV()">📄 CSV</button>
+        <button class="b-sample" onclick="loadQuery()">📄 Query</button>
+        <button class="b-sample2" onclick="loadBase64()">📄 Base64</button>
+        <button class="b-sample" onclick="loadAllTypes()">🌈 All Types</button>
     </div>
     <div class="main">
         <div class="panel panel-left" id="panelLeft">
             <div class="panel-head">📥 Input <span id="fmtBadge"></span></div>
-            <textarea id="input" placeholder="Paste JSON, Map, or messy data here...&#10;&#10;💡 Auto-beautifies on paste&#10;⌨️ Ctrl+Enter to beautify&#10;🩹 Truncated JSON is auto-repaired"></textarea>
+            <textarea id="input" placeholder="Paste JSON, XML, CSV, Query String, Base64, Map, or messy data here...&#10;&#10;💡 Auto-beautifies on paste&#10;⌨️ Ctrl+Enter to beautify&#10;🩹 Truncated JSON is auto-repaired"></textarea>
         </div>
         <div class="resizer" id="resizer"></div>
         <div class="panel panel-right" id="panelRight">
@@ -464,7 +515,7 @@
         for(let i=1;i<=n;i++)h+=`<span class="ln">${i}</span>`;
         gutterEl.innerHTML=h;
     }
-    function setOutput(text){rawOutput=text;clearHL();if(!text){codePre.innerHTML='';gutterEl.innerHTML='';gutterEl.style.display='none';return;}codePre.innerHTML=syntaxHL(text);renderGutter();}
+    function setOutput(text,mode){rawOutput=text;clearHL();if(!text){codePre.innerHTML='';gutterEl.innerHTML='';gutterEl.style.display='none';return;}codePre.innerHTML=mode==='xml'?syntaxHLxml(text):syntaxHL(text);renderGutter();}
 
     // ============================================================
     //  SYNTAX HIGHLIGHTER
@@ -473,7 +524,14 @@
         let h=json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         h=h.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"\n])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],:])/g,
         m=>{
-            if(/^"/.test(m)){if(/:$/.test(m))return`<span class="sk">${m.slice(0,-1)}</span><span class="sco">:</span>`;return`<span class="ss">${m}</span>`;}
+            if(/^"/.test(m)){
+                if(/:$/.test(m))return`<span class="sk">${m.slice(0,-1)}</span><span class="sco">:</span>`;
+                // Detect type of string value and add indicator
+                const inner=m.slice(1,-1);
+                const badge=getTypeBadge(inner);
+                const cls=getTypeClass(inner);
+                return`<span class="${cls}">${m}</span>${badge}`;
+            }
             if(/true|false/.test(m))return`<span class="sb">${m}</span>`;
             if(/null/.test(m))return`<span class="snl">${m}</span>`;
             if(/^-?\d/.test(m))return`<span class="sn">${m}</span>`;
@@ -484,6 +542,26 @@
             return m;
         });
         return h;
+    }
+    function getTypeBadge(s){
+        if(s==='')return'<span class="st-empty"> ∅</span>';
+        if(/^https?:\/\//i.test(s))return'<span class="st-url"> 🔗</span>';
+        if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))return'<span class="st-email"> 📧</span>';
+        if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return'<span class="st-uuid"> 🆔</span>';
+        if(/^#([0-9a-fA-F]{3}){1,2}$/.test(s)){const c=s.length===4?'#'+s[1]+s[1]+s[2]+s[2]+s[3]+s[3]:s;return`<span class="st-color" style="background:${c}"></span>`;}
+        if(/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(s)||/^\d{4}-\d{2}-\d{2}$/.test(s))return'<span class="st-date"> 📅</span>';
+        if(s.length>=16&&s.length<=65536&&/^[A-Za-z0-9+\/]+=*$/.test(s))return'<span class="st-base64"> 🔐</span>';
+        return'';
+    }
+    function getTypeClass(s){
+        if(s==='')return'ss ss-empty';
+        if(/^https?:\/\//i.test(s))return'ss ss-url';
+        if(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))return'ss ss-email';
+        if(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s))return'ss ss-uuid';
+        if(/^#([0-9a-fA-F]{3}){1,2}$/.test(s))return'ss';
+        if(/^\d{4}-\d{2}-\d{2}(T|\s)\d{2}:\d{2}/.test(s)||/^\d{4}-\d{2}-\d{2}$/.test(s))return'ss ss-date';
+        if(s.length>=16&&s.length<=65536&&/^[A-Za-z0-9+\/]+=*$/.test(s))return'ss ss-base64';
+        return'ss';
     }
 
     // ============================================================
@@ -506,6 +584,102 @@
         if(typeof v==='object'){const k=Object.keys(v);if(!k.length)return'{}';return'{'+nl+k.map(key=>kid+JSON.stringify(key)+':'+g+_s(v[key],d+1,sp)).join(','+nl)+nl+pad+'}';}
         return String(v);
     }
+
+    // ============================================================
+    //  XML DETECTION & BEAUTIFIER
+    // ============================================================
+    function isXML(s){const t=s.trim();return t.startsWith('<?xml')||(/^<[a-zA-Z]/.test(t)&&/<\/[a-zA-Z]/.test(t));}
+    function beautifyXML(s){
+        let formatted='',indent='',t=s.trim();
+        const indV=getInd(),sp=indV==='\t'?'\t':' '.repeat(typeof indV==='number'?indV:2);
+        t=t.replace(/(>)\s*(<)/g,'$1\n$2');
+        const lines=t.split('\n');
+        lines.forEach(line=>{
+            line=line.trim();if(!line)return;
+            if(line.match(/^<\//)){ indent=indent.slice(sp.length);formatted+=indent+line+'\n'; }
+            else if(line.match(/^<[^\/!?].*[^\/]>$/)){formatted+=indent+line+'\n';indent+=sp;}
+            else{formatted+=indent+line+'\n';}
+        });
+        return formatted.trimEnd();
+    }
+    function syntaxHLxml(xml){
+        let h=xml.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        h=h.replace(/(&lt;\/?)([\w:.-]+)/g,'$1<span class="sx-tag">$2</span>');
+        h=h.replace(/([\w:.-]+)(=)(&quot;|")/g,'<span class="sx-attr">$1</span>$2$3');
+        h=h.replace(/(&lt;\?[\s\S]*?\?&gt;)/g,'<span class="sx-dec">$1</span>');
+        return h;
+    }
+    function countXMLElements(s){return(s.match(/<[a-zA-Z][^\/]*?>/g)||[]).length;}
+
+    // ============================================================
+    //  CSV DETECTION & PARSER
+    // ============================================================
+    function isCSV(s){
+        const t=s.trim(),lines=t.split('\n');
+        if(lines.length<2)return false;
+        const sep=lines[0].includes('\t')?'\t':',';
+        const c0=lines[0].split(sep).length;
+        if(c0<2)return false;
+        let match=0;
+        for(let i=1;i<Math.min(lines.length,5);i++){if(lines[i].trim()&&lines[i].split(sep).length===c0)match++;}
+        return match>=1;
+    }
+    function parseCSV(s){
+        const t=s.trim(),lines=t.split('\n');
+        const sep=lines[0].includes('\t')?'\t':',';
+        const headers=lines[0].split(sep).map(h=>h.trim().replace(/^["']|["']$/g,''));
+        const result=[];
+        for(let i=1;i<lines.length;i++){
+            const ln=lines[i].trim();if(!ln)continue;
+            const vals=ln.split(sep).map(v=>v.trim().replace(/^["']|["']$/g,''));
+            const row={};
+            headers.forEach((h,j)=>{
+                let v=vals[j]||'';
+                if(v==='true')row[h]=true;else if(v==='false')row[h]=false;
+                else if(v==='')row[h]='';else if(v==='null')row[h]=null;
+                else if(/^-?\d+(\.\d+)?$/.test(v))row[h]=Number(v);
+                else row[h]=v;
+            });
+            result.push(row);
+        }
+        return {data:result,rows:lines.length-1,cols:headers.length};
+    }
+
+    // ============================================================
+    //  QUERY STRING DETECTION & PARSER
+    // ============================================================
+    function isQueryString(s){
+        const t=s.trim();
+        if(t.startsWith('?'))return/[\w%+.-]+=[\w%+.-]/.test(t);
+        return/^[\w%+.-]+=[\w%+.-]*(&[\w%+.-]+=[\w%+.-]*)*$/.test(t);
+    }
+    function parseQueryString(s){
+        let t=s.trim();if(t.startsWith('?'))t=t.slice(1);
+        if(t.includes('#'))t=t.split('#')[0];
+        const obj={};
+        t.split('&').forEach(p=>{
+            const [k,...vParts]=p.split('=');
+            if(!k)return;
+            const key=decodeURIComponent(k);
+            const val=decodeURIComponent(vParts.join('='));
+            if(val==='true')obj[key]=true;else if(val==='false')obj[key]=false;
+            else if(val==='null')obj[key]=null;
+            else if(/^-?\d+(\.\d+)?$/.test(val)&&val.length<16)obj[key]=Number(val);
+            else obj[key]=val;
+        });
+        return obj;
+    }
+
+    // ============================================================
+    //  BASE64 DETECTION & DECODER
+    // ============================================================
+    function isBase64(s){
+        const t=s.trim();
+        if(t.length<8||t.length>102400||t.includes(' ')||t.includes('\n'))return false;
+        if(!/^[A-Za-z0-9+\/]+=*$/.test(t))return false;
+        try{const d=atob(t);return d.length>0&&/^[\x20-\x7E\s]+$/.test(d);}catch(e){return false;}
+    }
+    function decodeBase64(s){return atob(s.trim());}
 
     // ============================================================
     //  MAP PARSER
@@ -611,7 +785,7 @@
     // ============================================================
     function getInd(){const v=$('indentSize').value;return v==='tab'?'\t':Number(v);}
     function setStatus(m,t){const el=$('statusMsg');el.textContent=m;el.className='status-msg '+(t==='success'?'ok':t==='error'?'err':t==='warn'?'warn':'info');}
-    function setFB(t){$('fmtBadge').innerHTML=t==='map'?'<span class="format-badge map">MAP</span>':t==='json'?'<span class="format-badge json">JSON</span>':'';}
+    function setFB(t){const labels={json:'JSON',map:'MAP',xml:'XML',csv:'CSV',query:'QUERY',base64:'BASE64'};$('fmtBadge').innerHTML=labels[t]?`<span class="format-badge ${t}">${labels[t]}</span>`:'';}
     function setRepairBadge(repairs){
         if(repairs.length){
             $('repairBadge').innerHTML=`<span class="repair-badge">🩹 ${repairs.length} repair(s)</span>`;
@@ -626,11 +800,79 @@
         if(!inp.trim()){setStatus('⚠️ Paste some data first.','error');setOutput('');setFB('');setRepairBadge([]);return;}
         try{
             lastRepairs=[];
+            const trimmed=inp.trim();
+
+            // XML detection
+            if(isXML(trimmed)){
+                setFB('xml');
+                const pretty=beautifyXML(trimmed);
+                const elCount=countXMLElements(trimmed);
+                setOutput(pretty,'xml');
+                setRepairBadge([]);
+                setStatus(`✅ Beautified! — XML Document — ${elCount} element${elCount!==1?'s':''}`,'success');
+                return;
+            }
+
+            // CSV detection
+            if(isCSV(trimmed)){
+                setFB('csv');
+                const {data,rows,cols}=parseCSV(trimmed);
+                let p=data;
+                if($('sortKeys').checked)p=srt(p);
+                if($('autoDetect').checked)p=deepUn(p);
+                setOutput(safeStr(p,getInd()));
+                setRepairBadge([]);
+                setStatus(`✅ Beautified! — CSV — ${rows} row${rows!==1?'s':''}, ${cols} column${cols!==1?'s':''} → JSON`,'success');
+                return;
+            }
+
+            // Base64 detection
+            if(isBase64(trimmed)){
+                setFB('base64');
+                const decoded=decodeBase64(trimmed);
+                // Try to process decoded content recursively
+                $('input').value=decoded;
+                const inner=decoded.trim();
+                if(isXML(inner)){
+                    const pretty=beautifyXML(inner);
+                    setOutput(pretty,'xml');
+                    setRepairBadge([]);
+                    setStatus(`✅ Beautified! — Base64 → XML`,'success');
+                    return;
+                }
+                try{
+                    let p=deepParse(decoded);
+                    if($('autoDetect').checked)p=deepUn(p);
+                    setOutput(safeStr(p,getInd()));
+                    setRepairBadge(lastRepairs);
+                    const ks=Array.isArray(p)?`Array [${p.length}]`:(p&&typeof p==='object')?`Object {${Object.keys(p).length} keys}`:typeof p;
+                    setStatus(`✅ Beautified! — Base64 → ${ks}`,'success');
+                    return;
+                }catch(e){
+                    setOutput(decoded);
+                    setStatus(`✅ Decoded Base64 (plain text)`,'success');
+                    return;
+                }
+            }
+
+            // Query string detection
+            if(isQueryString(trimmed)){
+                setFB('query');
+                let p=parseQueryString(trimmed);
+                if($('sortKeys').checked)p=srt(p);
+                const nParams=Object.keys(p).length;
+                setOutput(safeStr(p,getInd()));
+                setRepairBadge([]);
+                setStatus(`✅ Beautified! — Query String — ${nParams} parameter${nParams!==1?'s':''} → JSON`,'success');
+                return;
+            }
+
+            // Default: JSON / Map
             let p=deepParse(inp);
             if($('autoDetect').checked) p=deepUn(p);
             setOutput(safeStr(p,getInd()));
             setRepairBadge(lastRepairs);
-            const ks=Array.isArray(p)?`Array [${p.length}]`:(p&&typeof p==='object')?`Object {${Object.keys(p).length} keys}`:typeof p;
+            const ks=Array.isArray(p)?`Array [${p.length} item${p.length!==1?'s':''}]`:(p&&typeof p==='object')?`Object {${Object.keys(p).length} key${Object.keys(p).length!==1?'s':''}}`:(typeof p);
             if(lastRepairs.length){
                 setStatus(`✅ Beautified with 🩹 ${lastRepairs.length} auto-repair(s): ${lastRepairs.join(', ')}`,'warn');
             }else{
@@ -671,6 +913,49 @@
     function loadMap(){
         $('input').value=`{7556771000000090034={"record_start_index":2,"pptr_response_code":"106","failed_records":"[7556771000000090034]","end_time":"1771916639877","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916609796,"pptr_end_time":"1771916638966","pptr_start_time":"1771916627529","start_time":"1771916627463","filepath":[],"limit":1,"status":"failed"}, record_completed_count=1, credit_points_info={"credit_expiry_records" : []}, 7556771000000090033={"record_start_index":1,"pptr_response_code":-1,"failed_records":"[]","end_time":"1771916687465","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916671276,"pptr_end_time":-1,"pptr_start_time":-1,"start_time":"1771916687465","filepath":[],"limit":10,"status":"success"}, info={"imagecount":1,"priority_value":10,"job_end_time":-1,"job_start_time":1771916453668,"credit_points_info":{"credit_expiry_records":[]},"retry_limit":2,"retries":2,"job_status":0,"total_record_count":3,"isBufferMerge":false,"batch_index":4,"is_priority_fixed":true,"plan":"","batch_ids":[7556771000000090032,7556771000000090033,7556771000000090034,7556771000000090033]}, failed_record_count=2, 7556771000000090032={"record_start_index":0,"pptr_response_code":"106","failed_records":"[]","end_time":"1771916671096","recordinsas_status":"removed","threadpool_name":"com.zoho.writer.mailmerge.TinyRecordProcess","priorityjob_scheduled_time":1771916609779,"pptr_end_time":"1771916638766","pptr_start_time":"1771916627538","start_time":"1771916627462","filepath":[],"limit":1,"status":"success"}}`;
         setStatus('📄 Map loaded — click Beautify!','info');
+    }
+
+    function loadXML(){
+        $('input').value=`<?xml version="1.0" encoding="UTF-8"?>\n<catalog>\n  <book id="bk101">\n    <author>Gambardella, Matthew</author>\n    <title>XML Developer's Guide</title>\n    <genre>Computer</genre>\n    <price>44.95</price>\n    <publish_date>2000-10-01</publish_date>\n    <description>An in-depth look at creating applications with XML.</description>\n  </book>\n  <book id="bk102">\n    <author>Ralls, Kim</author>\n    <title>Midnight Rain</title>\n    <genre>Fantasy</genre>\n    <price>5.95</price>\n    <publish_date>2000-12-16</publish_date>\n    <description>A former architect battles corporate zombies.</description>\n  </book>\n</catalog>`;
+        setStatus('📄 XML loaded — click Beautify!','info');
+    }
+
+    function loadCSV(){
+        $('input').value=`name,age,email,city,active\nAlice,30,alice@example.com,New York,true\nBob,25,bob@test.org,London,false\nCharlie,35,charlie@demo.io,Tokyo,true\nDiana,28,diana@sample.net,Paris,true`;
+        setStatus('📄 CSV loaded — click Beautify!','info');
+    }
+
+    function loadQuery(){
+        $('input').value=`?user=john_doe&role=admin&theme=dark&page=1&sort=name&order=asc&lang=en&debug=false&token=abc123xyz`;
+        setStatus('📄 Query String loaded — click Beautify!','info');
+    }
+
+    function loadBase64(){
+        $('input').value=btoa(JSON.stringify({message:"Hello from Base64!",decoded:true,timestamp:"2024-01-15T10:30:00Z",count:42}));
+        setStatus('📄 Base64 loaded — click Beautify!','info');
+    }
+
+    function loadAllTypes(){
+        $('input').value=JSON.stringify({
+            "name":"All Types Showcase","version":"2.0","large_id":6964908000002451283,
+            "website":"https://example.com/dashboard","api_endpoint":"https://api.github.com/users",
+            "contact_email":"admin@example.com","support":"support@company.org",
+            "created_at":"2024-01-15T10:30:00Z","updated_date":"2024-06-20","expire":"2025-12-31T23:59:59.999Z",
+            "primary_color":"#1a73e8","accent":"#ff5722","bg":"#fff",
+            "session_id":"550e8400-e29b-41d4-a716-446655440000","trace_id":"6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+            "auth_token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9","encoded_data":"SGVsbG8gV29ybGQh",
+            "empty_field":"","description":"A regular string value",
+            "count":42,"pi":3.14159,"negative":-100,"big_number":9007199254740993,
+            "is_active":true,"is_deleted":false,"metadata":null,
+            "tags":["demo","showcase","beautifier"],
+            "nested":{"level1":{"level2":{"deep_url":"https://deep.example.com/path?q=1","deep_email":"nested@deep.com"}}},
+            "users":[
+                {"id":"a1b2c3d4-e5f6-7890-abcd-ef1234567890","name":"Alice","email":"alice@example.com","joined":"2023-03-15","avatar":"https://avatars.example.com/alice.png","role":"admin"},
+                {"id":"b2c3d4e5-f6a7-8901-bcde-f12345678901","name":"Bob","email":"bob@test.org","joined":"2023-07-22","avatar":"https://avatars.example.com/bob.png","role":"user"}
+            ],
+            "theme_colors":{"primary":"#0d47a1","secondary":"#ff9800","success":"#4caf50","danger":"#f44336","info":"#2196f3","warning":"#ffc107"}
+        });
+        setStatus('🌈 All Types sample loaded — click Beautify!','info');
     }
 
     $('input').addEventListener('paste',()=>setTimeout(beautify,100));
