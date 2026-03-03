@@ -204,6 +204,7 @@
         .md-preview {
             padding: 16px 20px; color: #d4d4d4; font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
             font-size: 14px; line-height: 1.7; overflow: auto; flex: 1;
+            word-wrap: break-word; overflow-wrap: break-word;
         }
         .md-preview h1 { font-size: 1.8em; margin: 0.5em 0 0.3em; padding-bottom: 0.2em; border-bottom: 1px solid #444; color: #7cc4fa; }
         .md-preview h2 { font-size: 1.5em; margin: 0.5em 0 0.3em; padding-bottom: 0.15em; border-bottom: 1px solid #333; color: #7cc4fa; }
@@ -218,7 +219,7 @@
             background: #2d2d2d; color: #ce9178; padding: 2px 6px; border-radius: 3px;
             font-family: 'Fira Code','Consolas',monospace; font-size: 0.9em;
         }
-        .md-preview pre { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 12px; margin: 0.6em 0; overflow-x: auto; }
+        .md-preview pre { background: #1a1a1a; border: 1px solid #333; border-radius: 6px; padding: 12px; margin: 0.6em 0; white-space: pre-wrap; word-wrap: break-word; }
         .md-preview pre code { background: none; color: #d4d4d4; padding: 0; font-size: 0.88em; }
         .md-preview blockquote {
             border-left: 4px solid #4fc3f7; margin: 0.5em 0; padding: 6px 14px;
@@ -228,8 +229,8 @@
         .md-preview li { margin: 0.15em 0; }
         .md-preview hr { border: none; border-top: 1px solid #444; margin: 1em 0; }
         .md-preview img { max-width: 100%; border-radius: 6px; margin: 0.4em 0; }
-        .md-preview table { border-collapse: collapse; margin: 0.6em 0; width: auto; }
-        .md-preview th, .md-preview td { border: 1px solid #444; padding: 6px 12px; text-align: left; }
+        .md-preview table { border-collapse: collapse; margin: 0.6em 0; max-width: 100%; display: block; overflow-x: auto; }
+        .md-preview th, .md-preview td { border: 1px solid #444; padding: 6px 12px; text-align: left; word-break: break-word; }
         .md-preview th { background: #2a2a2a; color: #9cdcfe; font-weight: 600; }
         .md-preview td { background: #1e1e1e; }
         /* Light theme markdown */
